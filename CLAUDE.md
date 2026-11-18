@@ -1,0 +1,102 @@
+# CLAUDE.md
+
+Guidance for Claude Code when working in this repository.
+
+## Project
+
+**Downbot** — a multi-model Generative AI chat app, being built on top of a finished
+authentication starter. Auth (register/login/refresh/logout/me) is complete and tested.
+The **conversation/chat feature is in progress** (models + validator exist; controller,
+DAO, route wiring, LLM integration, and frontend are not built yet).
+
+The design sketch in `00018-genai-project.excalidraw` defines the conversation/message
+schemas and the `POST /api/v1/conversation` flow (no `conversation` id → create a new
+conversation; otherwise continue it).
+
+## Stack
+
+- npm workspaces monorepo: `backend/`, `frontend/`. Plain **JavaScript ES modules** — no TypeScript. Types are JSDoc.
+- Node `>=22.22`.
+- **Backend:** Express 5, Mongoose 8 (MongoDB), jsonwebtoken, bcryptjs, express-validator, express-rate-limit, cookie-parser, morgan.
+- **Frontend:** React 19, Vite 7, Redux Toolkit, react-router v8, Axios, Tailwind CSS v4, lucide-react, self-hosted fonts (@fontsource).
+- **Tests:** backend `node:test` + supertest + mongodb-memory-server; frontend Vitest + Testing Library + jsdom + axios-mock-adapter.
+
+## Commands (run from repo root)
+
+```sh
+npm install                 # installs both workspaces
+npm run dev                 # backend (node --watch) + frontend (vite on 127.0.0.1:5173) via concurrently
+npm run lint                # eslint . (flat config in eslint.config.js)
+npm test                    # backend tests then frontend tests
+npm run build               # frontend production build -> frontend/dist
+npm test -w backend         # backend only (node --test --test-concurrency=1)
+npm test -w frontend        # frontend only (vitest run)
+npm test -w backend -- test/auth.test.js                    # single backend test file
+npm test -w frontend -- src/features/auth/UI/auth.test.jsx  # single frontend test file
+```
+
+Backend reads `backend/.env` via `node --env-file=.env`. Required: `MONGODB_URI`,
+`ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET` (≥32 chars, must differ). `config/env.js`
+throws at import time if anything is missing/invalid. Never read, print, or commit `.env`.
+
+### Port
+The API runs on **3000** (`PORT` in `backend/.env`, default in `config/env.js`).
+`frontend/vite.config.js` proxies `/api` → `http://127.0.0.1:3000`. Keep these in sync.
+
+## Backend architecture (`backend/src/`)
+
+Strict layering: **routes → (validators + validate middleware) → controller → DAO → models**.
+
+- `routes/` — `index.routes.js` mounts `/auth` (with `Cache-Control: no-store`) and `/conversation` under `/api/v1`. Wrap async handlers with `asyncHandler`.
+- `controller/` — owns business/auth decisions. Uses `sendSuccess` and throws `AppError`.
+- `DAO/` — **the only layer that imports Mongoose models.** Controllers never touch models directly.
+- `models/` — `user`, `conversation`, `message`. Mongoose schemas exported alongside models (used for JSDoc `InferSchemaType`).
+- `validators/` — express-validator chains; `validate` turns failures into `422` with field errors. Login uses `validateLogin` (generic `401`, to avoid leaking which field was wrong).
+- `middleware/` — `requireAuth` (Bearer access JWT → `req.user`), `errorHandler` (central; maps AppError, Mongo 11000, CastError, JWT errors, body-parse errors), `notFound`.
+- `utils/` — `AppError(statusCode, message, errors=[])`, `sendSuccess(res, status, message, data)`, `asyncHandler`, `jwt.js`.
+- `types/` — JSDoc typedefs only (`export {}`).
+- `services/` — empty, **reserved for third-party integrations** → this is where LLM provider clients belong.
+- `config/` — `env.js` (validated, frozen `env` object; import config from here, not `process.env`), `db.js` (`connectDB` awaits model index init).
+
+### API response envelope (always)
+- Success: `{ success: true, message, data }`
+- Error: `{ success: false, message, errors: [{ field, message }], stack? }` (stack only outside production)
+
+### Auth model (don't weaken)
+- Access JWT: 15 min, kept **only in Redux memory** (never localStorage/sessionStorage).
+- Refresh JWT: 7 days, HTTP-only cookie `refreshToken`, `SameSite=Strict`, path `/api/v1/auth`, `Secure` in production.
+- One refresh session per user, rotated via atomic compare-and-swap in `updateRefreshToken`; unique `jti`, distinct issuer/audience per token type.
+- Login uses a dummy bcrypt hash for timing equalization. Credential endpoints are rate limited (30 failures / 15 min / IP, in-memory).
+- `toPublicUser` is the allowlist for user fields returned in JSON: `id, name, email, createdAt`.
+- Body limit 16 KB (`app.js`) — revisit if chat messages/prompts need to be larger.
+
+## Frontend architecture (`frontend/src/`)
+
+- `app/` — `routes.jsx` (data router: `SessionGate` → `GuestRoute` / `ProtectedRoute`), `store.js` (Redux store), `NotFoundPage.jsx`.
+- `features/<feature>/` with four layers — **every new feature (e.g. chat) should mirror this:**
+  - `API/` — Axios clients. Receives session callbacks (`getAccessToken`, `onSession`, `onExpired`) instead of importing the store. `protectedClient` adds the Bearer header and does single-flight refresh + retry on 401.
+  - `State/` — Redux Toolkit slices.
+  - `Hooks/` — glue between API and State (form state, validation, orchestration). `Hooks/session.js` creates the shared `authApi` instance.
+  - `UI/` — `pages/` and `components/`. **UI never calls Axios or dispatches Redux directly**; it goes through hooks.
+- All requests use relative `/api/v1/...` URLs through the Vite proxy. **No CORS** is configured, by design (same-origin in production).
+- Styling: Tailwind v4 + semantic color tokens in `src/styles.css`; dark mode overrides tokens via `prefers-color-scheme`. Components should not hard-code colors.
+- `src/main.jsx` calls `initializeSession()` before render to restore a session from the refresh cookie.
+
+## Current state of the conversation feature (WIP)
+
+- `models/conversation.model.js` — `user`, `title` (default "New conversation"), `lastMessage`; timestamps `createdAt` / `lastUpdate`; index `{ user: 1, lastMessage: -1 }`.
+- `models/message.model.js` — `role` ∈ `user | assistant | tool`, `content`, `conversation`; index `{ conversation: 1, createdAt: 1 }`.
+- `validators/conversation.validator.js` — `content` (required non-blank string), `conversation` (optional MongoId). The body field is **`conversation`**, not `conversationId`.
+- `routes/conversation.routes.js` — `router.post("/", requireAuth, sendMessageValidator, validate)` **has no final handler yet**; `handleMessage` is not wired in (needs `asyncHandler(handleMessage)`).
+- `controller/conversation.controller.js` — `handleMessage` is a stub; has unused imports (`env`, `sendSuccess`) that will trip `npm run lint`.
+- Missing: `DAO/conversation.dao.js` / `message.dao.js`, ownership check that the conversation belongs to `req.user`, LLM service in `services/`, LLM API keys in `env.js` / `.env.example`, backend tests, and the frontend `features/chat/` slice.
+- `AccountPage` mentions AI model names as future direction only — no integrations exist yet.
+
+## Conventions
+
+- ESM everywhere (`import`/`export`, include `.js`/`.jsx` extensions in relative imports).
+- Style: 2-space indent, single quotes, semicolons, trailing commas in multiline literals (match surrounding code; a few WIP files use double quotes).
+- ESLint: unused vars are errors unless they start with uppercase/`_` (vars) or `_` (args). React hooks rules apply under `frontend/src`.
+- Add JSDoc to exported backend functions (`@param`, `@returns`, `@throws`) like existing code.
+- New backend behavior → add integration tests in `backend/test/` (pattern: set env vars + `MongoMemoryServer` in `before`, then dynamic-import `app.js`).
+- Not a git repository yet.
