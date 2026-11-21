@@ -1,67 +1,92 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useForm } from 'react-hook-form';
 import { authApi } from './session.js';
 import { getApiError } from '../API/auth.api.js';
 import { sessionReceived } from '../State/auth.slice.js';
+import { notify } from '../../../shared/toast/notify.js';
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Validation rules, mirroring the backend's express-validator rules. */
+const rules = {
+  name: {
+    validate: (value) => {
+      const length = value.trim().length;
+      return (length >= 2 && length <= 50) || 'Name must be 2-50 characters';
+    },
+  },
+  email: {
+    validate: (value) => emailPattern.test(value.trim()) || 'Enter a valid email address',
+  },
+  loginPassword: {
+    required: 'Enter your password',
+  },
+  registerPassword: {
+    validate: (value) => {
+      // bcrypt silently ignores bytes after 72, so the backend rejects longer passwords.
+      if (new TextEncoder().encode(value).length > 72) return 'Password must be at most 72 UTF-8 bytes';
+      if (value.length < 8 || !/[a-z]/i.test(value) || !/\d/.test(value)) {
+        return 'Use at least 8 characters, including a letter and a number';
+      }
+      return true;
+    },
+  },
+};
+
+/**
+ * Login and registration form state, powered by react-hook-form.
+ * @param {'login' | 'register'} mode
+ */
 export function useAuthForm(mode) {
   const dispatch = useDispatch();
-  const [values, setValues] = useState({ name: '', email: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState(null);
-  const [fieldErrors, setFieldErrors] = useState({});
   const isRegister = mode === 'register';
+  const [showPassword, setShowPassword] = useState(false);
 
-  const updateField = (event) => {
-    const { name, value } = event.target;
-    setValues((previous) => ({ ...previous, [name]: value }));
-    setFieldErrors((previous) => ({ ...previous, [name]: undefined }));
-    setError(null);
+  const {
+    register, handleSubmit, setError, clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: isRegister ? { name: '', email: '', password: '' } : { email: '', password: '' },
+  });
+
+  /** Props for a <FormField>: name, ref, onChange, onBlur. */
+  const field = (name) => {
+    const fieldRules = name === 'password'
+      ? rules[isRegister ? 'registerPassword' : 'loginPassword']
+      : rules[name];
+    // Typing again hides the server's banner message, like before.
+    return register(name, { ...fieldRules, onChange: () => clearErrors('root.server') });
   };
 
-  async function submit(event) {
-    event.preventDefault();
-    if (pending) return;
-    setError(null);
-    const errors = {};
-    if (isRegister && (values.name.trim().length < 2 || values.name.trim().length > 50)) {
-      errors.name = 'Name must be 2-50 characters';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
-      errors.email = 'Enter a valid email address';
-    }
-    if (isRegister && (values.password.length < 8 || !/[a-z]/i.test(values.password)
-      || !/\d/.test(values.password))) {
-      errors.password = 'Use at least 8 characters, including a letter and a number';
-    } else if (!values.password) {
-      errors.password = 'Enter your password';
-    }
-    if (isRegister && new TextEncoder().encode(values.password).length > 72) {
-      errors.password = 'Password must be at most 72 UTF-8 bytes';
-    }
-    setFieldErrors(errors);
-    if (Object.keys(errors).length) {
-      setError('Please check the highlighted fields.');
-      return;
-    }
-    setPending(true);
+  const submit = handleSubmit(async (values) => {
+    const input = { email: values.email.trim(), password: values.password };
+    if (isRegister) input.name = values.name.trim();
     try {
-      const input = { email: values.email.trim(), password: values.password };
-      if (isRegister) input.name = values.name.trim();
       const session = await authApi[mode](input);
+      const firstName = session.user.name.split(' ')[0];
+      if (isRegister) {
+        notify.success(`Welcome to Downbot, ${firstName}.`, 'Your space is ready. Make yourself at home.', { id: 'auth' });
+      } else {
+        notify.success(`Welcome back, ${firstName}.`, 'Good to see you again. Pick up right where you left off.', { id: 'auth' });
+      }
       dispatch(sessionReceived(session));
     } catch (error) {
       const failure = getApiError(error);
-      setError(failure.message);
-      setFieldErrors(Object.fromEntries(failure.fields.map(({ field, message }) => [field, message])));
-    } finally {
-      setPending(false);
+      setError('root.server', { message: failure.message });
+      failure.fields.forEach(({ field: name, message }) => setError(name, { type: 'server', message }));
     }
-  }
+  });
+
+  const fieldErrors = Object.fromEntries(
+    ['name', 'email', 'password'].map((name) => [name, errors[name]?.message]),
+  );
+  const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
+  const error = errors.root?.server?.message
+    || (hasFieldErrors ? 'Please check the highlighted fields.' : null);
 
   return {
-    values, pending, error, fieldErrors, showPassword, updateField, submit,
+    field, submit, pending: isSubmitting, error, fieldErrors, showPassword,
     togglePassword: () => setShowPassword((value) => !value),
   };
 }

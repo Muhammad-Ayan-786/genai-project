@@ -18,7 +18,7 @@ conversation; otherwise continue it).
 - npm workspaces monorepo: `backend/`, `frontend/`. Plain **JavaScript ES modules** — no TypeScript. Types are JSDoc.
 - Node `>=22.22`.
 - **Backend:** Express 5, Mongoose 8 (MongoDB), jsonwebtoken, bcryptjs, express-validator, express-rate-limit, cookie-parser, morgan.
-- **Frontend:** React 19, Vite 7, Redux Toolkit, react-router v8, Axios, Tailwind CSS v4, lucide-react, self-hosted fonts (@fontsource).
+- **Frontend:** React 19, Vite 7, Redux Toolkit, react-router v8, Axios, react-hook-form, react-hot-toast (custom-styled), GSAP + @gsap/react, Tailwind CSS v4, lucide-react, self-hosted fonts (@fontsource).
 - **Tests:** backend `node:test` + supertest + mongodb-memory-server; frontend Vitest + Testing Library + jsdom + axios-mock-adapter.
 
 ## Commands (run from repo root)
@@ -78,8 +78,12 @@ Strict layering: **routes → (validators + validate middleware) → controller 
   - `State/` — Redux Toolkit slices.
   - `Hooks/` — glue between API and State (form state, validation, orchestration). `Hooks/session.js` creates the shared `authApi` instance.
   - `UI/` — `pages/` and `components/`. **UI never calls Axios or dispatches Redux directly**; it goes through hooks.
+- `shared/` — cross-feature building blocks (not tied to one feature):
+  - `animations/` — `gsap.js` (registers `useGSAP`; **always import gsap/useGSAP from here**), `motion.js` (motion tokens: eases, durations, stagger + `prefersReducedMotion()`), `useReveal` (staggered fade-up entrance, targets `[data-reveal]` or a selector), `useFloat` (slow decorative drift). Every animation must no-op under reduced motion; jsdom (tests) counts as reduced, so tests never see hidden content. Keep motion subtle.
+  - `toast/` — `notify.success|error|info(title, message, { id })` is the **only** way to show a toast; call it from Hooks, not UI. `ToastCard.jsx` is the custom design (GSAP enter/exit + countdown bar), `AppToaster.jsx` is mounted once in `main.jsx` (position `bottom-right`, user's choice). Do **not** call `useToasterStore()` in toast components: in react-hot-toast 2.6 a second subscriber's cleanup unsubscribes the Toaster and freezes all toasts.
+- Forms use **react-hook-form** (`useForm` inside the feature hook). `useAuthForm` exposes `field(name)` (spread onto `<FormField>`, which forwards `ref` via React 19 ref-as-prop), `submit`, `pending`, `error`, `fieldErrors`. Server errors → `setError('root.server')` + per-field `setError`.
 - All requests use relative `/api/v1/...` URLs through the Vite proxy. **No CORS** is configured, by design (same-origin in production).
-- Styling: Tailwind v4 + semantic color tokens in `src/styles.css`; dark mode overrides tokens via `prefers-color-scheme`. Components should not hard-code colors.
+- Styling: `src/styles/theme.css` is the **single source of truth** for colors, fonts and shadows. Each token is defined once as `--color-x: light-dark(LIGHT, DARK)`; Tailwind turns it into `bg-x`/`text-x`/etc. Theme follows the OS by default; `document.documentElement.dataset.theme = 'light' | 'dark'` forces one (ready for a future toggle). `src/styles/index.css` holds base styles and component classes (`.button-primary`, `.form-input`, ...). Never hard-code hex colors in components. Full UI redesign (colors/typography/animation) is planned after core features.
 - `src/main.jsx` calls `initializeSession()` before render to restore a session from the refresh cookie.
 
 ## Current state of the conversation feature (WIP)
@@ -92,6 +96,12 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 - Missing: `DAO/conversation.dao.js` / `message.dao.js`, ownership check that the conversation belongs to `req.user`, LLM service in `services/`, LLM API keys in `env.js` / `.env.example`, backend tests, and the frontend `features/chat/` slice.
 - `AccountPage` mentions AI model names as future direction only — no integrations exist yet.
 
+## Working agreements (for Claude)
+
+- After any significant change (new library, folder, convention, decision, gotcha), update this file, the auto-memory, and claude-mem **without being asked**.
+- The user is building the conversation feature themselves. Don't edit their WIP files unless asked.
+- Explain things in simple English; the user is learning.
+
 ## Conventions
 
 - ESM everywhere (`import`/`export`, include `.js`/`.jsx` extensions in relative imports).
@@ -99,4 +109,4 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 - ESLint: unused vars are errors unless they start with uppercase/`_` (vars) or `_` (args). React hooks rules apply under `frontend/src`.
 - Add JSDoc to exported backend functions (`@param`, `@returns`, `@throws`) like existing code.
 - New backend behavior → add integration tests in `backend/test/` (pattern: set env vars + `MongoMemoryServer` in `before`, then dynamic-import `app.js`).
-- Not a git repository yet.
+- Git remote: `origin` → GitHub `Muhammad-Ayan-786/genai-project`, branch `main`. Commit/push only when asked.

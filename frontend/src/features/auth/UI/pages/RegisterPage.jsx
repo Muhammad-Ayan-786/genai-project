@@ -22,18 +22,17 @@ export function RegisterPage() {
         <fieldset disabled={form.pending} className="space-y-5 disabled:opacity-70">
           <legend className="sr-only">Create an account</legend>
           <FormField
-            label="Your name" name="name" type="text" autoComplete="name" placeholder="Alex Morgan"
-            maxLength={50} required value={form.values.name} onChange={form.updateField} error={form.fieldErrors.name}
+            label="Your name" {...form.field('name')} type="text" autoComplete="name" placeholder="Alex Morgan"
+            maxLength={50} required error={form.fieldErrors.name}
           />
           <FormField
-            label="Email address" name="email" type="email" autoComplete="email" autoCapitalize="none"
-            spellCheck={false} placeholder="you@example.com" required
-            value={form.values.email} onChange={form.updateField} error={form.fieldErrors.email}
+            label="Email address" {...form.field('email')} type="email" autoComplete="email" autoCapitalize="none"
+            spellCheck={false} placeholder="you@example.com" required error={form.fieldErrors.email}
           />
           <FormField
-            label="Password" name="password" type={form.showPassword ? 'text' : 'password'}
+            label="Password" {...form.field('password')} type={form.showPassword ? 'text' : 'password'}
             autoComplete="new-password" placeholder="Create a strong password" required
-            value={form.values.password} onChange={form.updateField} error={form.fieldErrors.password}
+            error={form.fieldErrors.password}
             hint="At least 8 characters, with a letter and a number."
             showPassword={form.showPassword} onToggle={form.togglePassword}
           />

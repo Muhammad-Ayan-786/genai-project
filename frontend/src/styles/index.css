@@ -1,0 +1,26 @@
+@import "tailwindcss";
+/* All colors, fonts and shadows (light + dark) live in theme.css. */
+@import "./theme.css";
+
+@layer base {
+  body { @apply m-0 bg-canvas font-sans text-ink antialiased; }
+  button, a, input { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), a { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  :focus-visible { @apply outline-2 outline-offset-4 outline-forest; }
+  ::selection { @apply bg-sage text-forest; }
+}
+
+@layer components {
+  .eyebrow { @apply text-[10px] font-semibold tracking-[0.18em] text-forest uppercase; }
+  .form-input {
+    @apply h-[52px] w-full rounded-lg border border-field-line bg-field px-4 text-sm text-ink transition-colors placeholder:text-placeholder focus:border-forest focus:bg-surface focus:outline-2 focus:outline-offset-2 focus:outline-forest;
+  }
+  .button-primary {
+    @apply inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg bg-forest px-5 py-3 text-[13px] font-semibold text-on-forest transition-colors hover:bg-forest-hover disabled:opacity-60;
+  }
+  .button-secondary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg border border-line bg-transparent py-2 font-medium text-forest transition-colors hover:bg-sage disabled:opacity-60;
+  }
+  .text-link { @apply rounded-sm font-semibold text-forest underline-offset-4 hover:underline disabled:opacity-60; }
+}

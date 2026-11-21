@@ -1,0 +1,69 @@
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  THEME: the single place for colors, fonts and shadows.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ *  Every token is written once as:   --color-name: light-dark(LIGHT, DARK);
+ *  Change a value here and it updates everywhere, in both themes.
+ *
+ *  Tailwind turns each `--color-*` token into utilities automatically:
+ *    --color-forest  →  bg-forest, text-forest, border-forest, outline-forest ...
+ *  Plain CSS / inline styles can use them too:  var(--color-forest)
+ *
+ *  Which theme is shown?
+ *    - By default it follows the operating system (light or dark).
+ *    - To force one (e.g. a future theme toggle), set it on <html>:
+ *        document.documentElement.dataset.theme = 'dark';   // or 'light'
+ *        delete document.documentElement.dataset.theme;      // back to system
+ *
+ *  Adding a color: add one line below, then use it as `bg-<name>` / `text-<name>`.
+ *  Components must never hard-code hex colors. Always use these tokens.
+ */
+
+@theme {
+  /* ── Typography ─────────────────────────────────────────────── */
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Plus Jakarta Sans", sans-serif;
+
+  /* ── Base surfaces & text ───────────────────────────── LIGHT ──── DARK ── */
+  --color-canvas:        light-dark(#faf8f5, #111412);  /* page background   */
+  --color-surface:       light-dark(#ffffff, #181d1a);  /* cards, popovers   */
+  --color-ink:           light-dark(#1a1a18, #ecefe9);  /* main text         */
+  --color-muted:         light-dark(#5b655c, #a3ada4);  /* secondary text    */
+  --color-line:          light-dark(#dce0d7, #2b332e);  /* borders, dividers */
+
+  /* ── Brand ─────────────────────────────────────────────────── */
+  --color-forest:        light-dark(#1b382b, #a9d1b4);  /* primary actions   */
+  --color-forest-hover:  light-dark(#112a1e, #c2e0ca);
+  --color-on-forest:     light-dark(#ffffff, #10241a);  /* text on primary   */
+  --color-sage:          light-dark(#e5ede3, #1c2a22);  /* soft brand panels */
+  --color-chip-line:     light-dark(#bdcbbf, #3d5144);
+
+  /* ── Feedback ──────────────────────────────────────────────── */
+  --color-error:         light-dark(#a33127, #f1998e);
+  --color-error-soft:    light-dark(#fff1ed, #2a1715);
+  --color-error-line:    light-dark(#e7c7c1, #5a2b26);
+
+  /* ── Form fields ───────────────────────────────────────────── */
+  --color-field:         light-dark(#fdfcf9, #151a17);
+  --color-field-line:    light-dark(#cdd3c8, #39433c);
+  --color-placeholder:   light-dark(#7b8178, #7d877f);
+
+  /* ── Decorative artwork (auth pages) ───────────────────────── */
+  --color-art-back:      light-dark(#d7dfd2, #2a3a30);
+  --color-art-mid:       light-dark(#edf1e9, #22302a);
+  --color-art-card:      light-dark(#fafcf7, #18201b);
+  --color-art-line:      light-dark(#cbd6cc, #34443a);
+  --color-bar-strong:    light-dark(#aab9a7, #5f7a66);
+  --color-bar-soft:      light-dark(#d9e1d5, #2f3e35);
+
+  /* ── Shadows ───────────────────────────────────────────────── */
+  --shadow-toast:
+    0 1px 2px light-dark(rgb(26 26 24 / 0.06), rgb(0 0 0 / 0.4)),
+    0 18px 40px -16px light-dark(rgb(27 56 43 / 0.28), rgb(0 0 0 / 0.7));
+}
+
+/* light-dark() picks its value from color-scheme. */
+:root { color-scheme: light dark; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }

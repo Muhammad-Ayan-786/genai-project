@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { authApi, initializeSession } from './session.js';
 import { getApiError } from '../API/auth.api.js';
 import { sessionCleared, profileReceived } from '../State/auth.slice.js';
+import { notify } from '../../../shared/toast/notify.js';
 
 export function useAuth() {
   return { ...useSelector((state) => state.auth), retrySession: initializeSession };
@@ -23,6 +24,7 @@ export function useAccount() {
     try {
       await authApi.logout();
       dispatch(sessionCleared());
+      notify.success('Signed out', 'Your space will be right here when you come back.', { id: 'auth' });
     } catch (error) {
       if (error.response?.status === 401) dispatch(sessionCleared());
       else setError(getApiError(error).message);
