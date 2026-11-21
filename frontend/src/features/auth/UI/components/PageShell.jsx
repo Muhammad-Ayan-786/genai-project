@@ -1,3 +1,4 @@
+import { BRAND } from '../../../../shared/brand.js';
 import { Brand } from './Brand.jsx';
 
 export function PageShell({ children, headerAction }) {
@@ -15,7 +16,7 @@ export function PageShell({ children, headerAction }) {
       </main>
       <footer className="mx-auto flex w-full max-w-[1360px] flex-col justify-between gap-3 px-6 py-7 text-xs text-muted sm:flex-row sm:px-10 lg:px-14">
         <p>A calmer place for your next big idea.</p>
-        <p>Downbot <span aria-hidden="true">&middot;</span> Your space to think</p>
+        <p>{BRAND.name} <span aria-hidden="true">&middot;</span> Your space to think</p>
       </footer>
     </div>
   );

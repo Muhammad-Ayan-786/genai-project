@@ -19,7 +19,7 @@ const pauseAll = () => countdowns.forEach((tween) => tween.pause());
 const resumeAll = () => countdowns.forEach((tween) => tween.resume());
 
 /**
- * Downbot's own toast design. Rendered through react-hot-toast's `toast.custom`,
+ * Milo's own toast design. Rendered through react-hot-toast's `toast.custom`,
  * so react-hot-toast handles stacking/timing and we fully own the look.
  * Don't render this directly; call `notify.*` from shared/toast/notify.js.
  */

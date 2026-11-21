@@ -15,7 +15,7 @@ const path = '/api/v1/auth';
 before(async () => {
   database = await MongoMemoryServer.create();
   process.env.NODE_ENV = 'test';
-  process.env.MONGODB_URI = database.getUri('downbot_test');
+  process.env.MONGODB_URI = database.getUri('milo_test');
   process.env.ACCESS_TOKEN_SECRET = randomBytes(48).toString('hex');
   process.env.REFRESH_TOKEN_SECRET = randomBytes(48).toString('hex');
   ({ default: app } = await import('../src/app.js'));
@@ -110,7 +110,7 @@ test('protected profile rejects absent, forged, expired, and wrong-purpose token
   const expired = jwt.sign(
     { id: registered.body.data.user.id, email: registered.body.data.user.email },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: -1, issuer: 'downbot', audience: 'downbot:access' },
+    { expiresIn: -1, issuer: 'milo', audience: 'milo:access' },
   );
   const response = await request(app).get(`${path}/me`).auth(expired, { type: 'bearer' }).expect(401);
   assert.deepEqual(response.body.errors, []);

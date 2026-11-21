@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
+import { APP_ID } from '../config/app.js';
 import { AppError } from './AppError.js';
 
-const issuer = 'downbot';
+const issuer = APP_ID;
 
 /**
  * @param {{id: string, email: string}} user User claims.
@@ -13,10 +14,10 @@ export function issueTokens(user) {
   const payload = { id: String(user.id), email: user.email };
   return {
     accessToken: jwt.sign(payload, env.accessTokenSecret, {
-      algorithm: 'HS256', expiresIn: '15m', issuer, audience: 'downbot:access', jwtid: randomUUID(),
+      algorithm: 'HS256', expiresIn: '15m', issuer, audience: `${APP_ID}:access`, jwtid: randomUUID(),
     }),
     refreshToken: jwt.sign(payload, env.refreshTokenSecret, {
-      algorithm: 'HS256', expiresIn: '7d', issuer, audience: 'downbot:refresh', jwtid: randomUUID(),
+      algorithm: 'HS256', expiresIn: '7d', issuer, audience: `${APP_ID}:refresh`, jwtid: randomUUID(),
     }),
   };
 }
@@ -36,7 +37,7 @@ function verify(token, secret, audience) {
  * @throws {Error} Invalid or expired JWT.
  */
 export function verifyAccessToken(token) {
-  return verify(token, env.accessTokenSecret, 'downbot:access');
+  return verify(token, env.accessTokenSecret, `${APP_ID}:access`);
 }
 
 /**
@@ -45,5 +46,5 @@ export function verifyAccessToken(token) {
  * @throws {Error} Invalid or expired JWT.
  */
 export function verifyRefreshToken(token) {
-  return verify(token, env.refreshTokenSecret, 'downbot:refresh');
+  return verify(token, env.refreshTokenSecret, `${APP_ID}:refresh`);
 }

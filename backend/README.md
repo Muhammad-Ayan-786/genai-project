@@ -1,4 +1,4 @@
-# Downbot authentication API
+# Milo API
 
 JavaScript ESM, Express, MongoDB/Mongoose, bcrypt, and JWT. Run `npm install` from
 the project root, copy `.env.example` to `.env`, configure MongoDB and distinct

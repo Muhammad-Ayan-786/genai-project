@@ -1,11 +1,12 @@
 import app from './app.js';
 import { env } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
+import { APP_NAME } from './config/app.js';
 
 try {
   await connectDB();
   const server = app.listen(env.port, () => {
-    console.info(`Downbot API listening on http://localhost:${env.port}`);
+    console.info(`${APP_NAME} API listening on http://localhost:${env.port}`);
   });
   server.on('error', (error) => {
     console.error('HTTP server failed:', error);
@@ -33,6 +34,6 @@ try {
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 } catch (error) {
-  console.error('Unable to start Downbot API:', error);
+  console.error(`Unable to start ${APP_NAME} API:`, error);
   process.exitCode = 1;
 }

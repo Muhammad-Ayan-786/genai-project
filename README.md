@@ -1,4 +1,4 @@
-# Downbot
+# Milo
 
 A calm, authentication-only starting point for a future multi-model AI chat app.
 Includes registration, login, rotating sessions, a protected account page, and logout.

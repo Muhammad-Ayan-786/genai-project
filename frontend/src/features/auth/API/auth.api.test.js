@@ -81,7 +81,7 @@ describe('session-aware API', () => {
     raw.onPost('/login').reply(502, '<html>Bad gateway</html>');
     const error = await api.login({}).catch((error) => error);
     expect(getApiError(error)).toEqual({
-      message: 'Downbot is temporarily unavailable. Please try again.', fields: [],
+      message: 'Milo is temporarily unavailable. Please try again.', fields: [],
     });
   });
 });

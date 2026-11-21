@@ -5,6 +5,7 @@ import { useAuth } from '../../Hooks/useAuth.js';
 import { AuthLayout } from '../components/AuthLayout.jsx';
 import { FormField } from '../components/FormField.jsx';
 import { ErrorMessage, Spinner } from '../components/Feedback.jsx';
+import { BRAND } from '../../../../shared/brand.js';
 
 export function LoginPage() {
   const form = useAuthForm('login');
@@ -38,7 +39,7 @@ export function LoginPage() {
       </form>
 
       <p className="mt-7 text-center text-[13px] text-muted">
-        New to Downbot?{' '}
+        New to {BRAND.name}?{' '}
         <Link to="/register" className="text-link inline-flex min-h-11 items-center">Create an account</Link>
       </p>
       <div className="mt-8 flex items-center justify-center gap-2 border-t border-line pt-6 text-[11px] text-muted">

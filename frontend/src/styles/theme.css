@@ -24,6 +24,10 @@
   /* ── Typography ─────────────────────────────────────────────── */
   --font-sans: "Inter", sans-serif;
   --font-display: "Plus Jakarta Sans", sans-serif;
+  /* Chat: greeting headline, AI answers (long reading), code. */
+  --font-headline: "Bricolage Grotesque", "Plus Jakarta Sans", sans-serif;
+  --font-reading: "Literata", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
 
   /* ── Base surfaces & text ───────────────────────────── LIGHT ──── DARK ── */
   --color-canvas:        light-dark(#faf8f5, #111412);  /* page background   */
@@ -57,7 +61,26 @@
   --color-bar-strong:    light-dark(#aab9a7, #5f7a66);
   --color-bar-soft:      light-dark(#d9e1d5, #2f3e35);
 
+  /* ── Chat shell: the deep forest sidebar ───────────────────── */
+  --color-shell:         light-dark(#1b382b, #0e1813);  /* sidebar ground    */
+  --color-shell-ink:     light-dark(#eef4ee, #e2ebe3);  /* sidebar text      */
+  --color-shell-muted:   light-dark(#a8bfb0, #8ea295);  /* group labels      */
+  --color-shell-hover:   light-dark(#244636, #15231b);
+  --color-shell-active:  light-dark(#2e5644, #1c3025);  /* current chat      */
+  --color-shell-line:    light-dark(#2c4c3c, #1d2a23);
+  --color-mint:          light-dark(#b9dcc2, #a9d1b4);  /* accent on shell   */
+  --color-on-mint:       light-dark(#10241a, #10241a);
+
+  /* ── Chat thread ───────────────────────────────────────────── */
+  --color-bubble:        light-dark(#e8efe5, #1c2a22);  /* your messages     */
+  --color-code:          light-dark(#f1f3ee, #0c110e);  /* code block ground */
+  --color-code-line:     light-dark(#dde2d8, #233029);
+  --color-inline-code:   light-dark(#e9eee6, #1f2b24);
+
   /* ── Shadows ───────────────────────────────────────────────── */
+  --shadow-composer:
+    0 1px 2px light-dark(rgb(26 26 24 / 0.05), rgb(0 0 0 / 0.35)),
+    0 12px 32px -14px light-dark(rgb(27 56 43 / 0.22), rgb(0 0 0 / 0.6));
   --shadow-toast:
     0 1px 2px light-dark(rgb(26 26 24 / 0.06), rgb(0 0 0 / 0.4)),
     0 18px 40px -16px light-dark(rgb(27 56 43 / 0.28), rgb(0 0 0 / 0.7));

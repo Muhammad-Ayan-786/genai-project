@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { authApi } from './session.js';
 import { getApiError } from '../API/auth.api.js';
 import { sessionReceived } from '../State/auth.slice.js';
+import { BRAND } from '../../../shared/brand.js';
 import { notify } from '../../../shared/toast/notify.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -66,7 +67,7 @@ export function useAuthForm(mode) {
       const session = await authApi[mode](input);
       const firstName = session.user.name.split(' ')[0];
       if (isRegister) {
-        notify.success(`Welcome to Downbot, ${firstName}.`, 'Your space is ready. Make yourself at home.', { id: 'auth' });
+        notify.success(`Welcome to ${BRAND.name}, ${firstName}.`, 'Your space is ready. Make yourself at home.', { id: 'auth' });
       } else {
         notify.success(`Welcome back, ${firstName}.`, 'Good to see you again. Pick up right where you left off.', { id: 'auth' });
       }

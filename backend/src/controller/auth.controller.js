@@ -15,7 +15,7 @@ const cookieOptions = Object.freeze({
   path: '/api/v1/auth',
 });
 const maxAge = 7 * 24 * 60 * 60 * 1000;
-const dummyHash = bcrypt.hashSync('downbot-timing-equalization', 10);
+const dummyHash = bcrypt.hashSync('milo-timing-equalization', 10);
 
 /**
  * @param {import('../types/user.js').User} user Stored user.

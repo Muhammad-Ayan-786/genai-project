@@ -4,10 +4,10 @@ Guidance for Claude Code when working in this repository.
 
 ## Project
 
-**Downbot** — a multi-model Generative AI chat app, being built on top of a finished
+**Milo** (renamed from Downbot on 2026-11-22) — a multi-model Generative AI chat app, being built on top of a finished
 authentication starter. Auth (register/login/refresh/logout/me) is complete and tested.
-The **conversation/chat feature is in progress**: the backend (`POST` SSE streaming, list
-conversations, list messages) works; the frontend is not built yet.
+The **conversation/chat feature works end to end**: backend (`POST` SSE streaming, list
+conversations, list messages) and frontend (`features/conversation/`, route `/chat/:conversationId?`).
 
 The design sketch in `genai-project.excalidraw` defines the conversation/message
 schemas and the `POST /api/v1/conversation` flow (no `conversation` id → create a new
@@ -18,7 +18,7 @@ conversation; otherwise continue it).
 - npm workspaces monorepo: `backend/`, `frontend/`. Plain **JavaScript ES modules** — no TypeScript. Types are JSDoc.
 - Node `>=22.22`.
 - **Backend:** Express 5, Mongoose 8 (MongoDB), jsonwebtoken, bcryptjs, express-validator, express-rate-limit, cookie-parser, morgan.
-- **Frontend:** React 19, Vite 7, Redux Toolkit, react-router v8, Axios, react-hook-form, react-hot-toast (custom-styled), GSAP + @gsap/react, Tailwind CSS v4, lucide-react, self-hosted fonts (@fontsource).
+- **Frontend:** React 19, Vite 7, Redux Toolkit, react-router v8, Axios, react-hook-form, react-hot-toast (custom-styled), GSAP + @gsap/react, Tailwind CSS v4, lucide-react, react-markdown + remark-gfm (AI replies), self-hosted fonts (@fontsource: Inter, Plus Jakarta Sans, Bricolage Grotesque, Literata, JetBrains Mono).
 - **Tests:** backend `node:test` + supertest + mongodb-memory-server; frontend Vitest + Testing Library + jsdom + axios-mock-adapter.
 
 ## Commands (run from repo root)
@@ -72,7 +72,7 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 
 ## Frontend architecture (`frontend/src/`)
 
-- `app/` — `routes.jsx` (data router: `SessionGate` → `GuestRoute` / `ProtectedRoute`), `store.js` (Redux store), `NotFoundPage.jsx`.
+- `app/` — `routes.jsx` (data router: `SessionGate` → `GuestRoute` / `ProtectedRoute`; `/` and signed-in users on `/login` go to `/chat`), `store.js` (Redux store: `auth` + `conversation`), `NotFoundPage.jsx`.
 - `features/<feature>/` with four layers — **every new feature (e.g. chat) should mirror this:**
   - `API/` — Axios clients. Receives session callbacks (`getAccessToken`, `onSession`, `onExpired`) instead of importing the store. `protectedClient` adds the Bearer header and does single-flight refresh + retry on 401.
   - `State/` — Redux Toolkit slices.
@@ -84,6 +84,9 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 - Forms use **react-hook-form** (`useForm` inside the feature hook). `useAuthForm` exposes `field(name)` (spread onto `<FormField>`, which forwards `ref` via React 19 ref-as-prop), `submit`, `pending`, `error`, `fieldErrors`. Server errors → `setError('root.server')` + per-field `setError`.
 - All requests use relative `/api/v1/...` URLs through the Vite proxy. **No CORS** is configured, by design (same-origin in production).
 - Styling: `src/styles/theme.css` is the **single source of truth** for colors, fonts and shadows. Each token is defined once as `--color-x: light-dark(LIGHT, DARK)`; Tailwind turns it into `bg-x`/`text-x`/etc. Theme follows the OS by default; `document.documentElement.dataset.theme = 'light' | 'dark'` forces one (ready for a future toggle). `src/styles/index.css` holds base styles and component classes (`.button-primary`, `.form-input`, ...). Never hard-code hex colors in components. Full UI redesign (colors/typography/animation) is planned after core features.
+- Chat look (Nov 2026, user chose "chat only, keep brand" + "editorial" fonts): deep-forest sidebar (`--color-shell*`, `--color-mint` tokens), greeting in Bricolage Grotesque (`font-headline`), AI answers in Literata serif (`font-reading`; `.markdown` styles in `index.css`), code in JetBrains Mono (`font-mono`). Signature motion: the Milo mark's chevron drops while the AI thinks (`.mark-thinking`). Login/register/account visuals were intentionally left as they were. `frontend/PRODUCT.md` holds product facts for the impeccable design skill.
+- **App name lives in one place per side:** `frontend/src/shared/brand.js` (`BRAND.name` "Milo", `BRAND.wordmark` "milo") and `backend/src/config/app.js` (`APP_NAME`, `APP_ID`). Never hard-code the name. Changing `APP_ID` changes the JWT issuer/audience (`milo`, `milo:access`, `milo:refresh`) and signs everyone out once. Workspace packages are `milo`, `@milo/backend`, `@milo/frontend`.
+- The MongoDB database is named `milo` (the user switched their `.env` from `downbot` on 2026-11-22; the old DB was empty).
 - `src/main.jsx` calls `initializeSession()` before render to restore a session from the refresh cookie.
 
 ## Current state of the conversation feature (WIP)
@@ -102,13 +105,22 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 - `requireAuth` must keep loading the user from the DB (`req.user` is a Mongoose doc with `_id`). The JWT payload only has `id`/`email`; using it directly breaks `/me` tests and `user._id` in the conversation controller.
 - `GET /` → `getAllConversations` (user's conversations, newest `lastMessage` first). `GET /messages/:conversationId` → `getAllMessagesByConversation` (ownership-checked, `404` if not owned/missing; malformed id → `422` via `conversationIdParamValidator` + `validate`). Both `requireAuth` + `asyncHandler`.
 - Tests: `backend/test/conversation.test.js` covers the two GET endpoints (sets a fake `GROQ_API_KEY`; never calls Groq). The streaming POST is not tested yet (would need a mocked model).
-- Missing: POST/SSE tests and the frontend `features/chat/` slice (POST + SSE means `fetch` stream reading, not `EventSource`).
+- Missing: backend POST/SSE tests (would need a mocked model).
+
+### Frontend conversation feature (`frontend/src/features/conversation/`)
+- `API/conversation.api.js` — `fetch`-based client (streaming needs `fetch`, not Axios/EventSource). Shares auth's single-flight `refresh`, retries once on 401. `readServerSentEvents` buffers events split across chunks. A mid-stream `{ error }` event makes `send` reject. Conversations normalize to `{ id, title, createdAt, lastMessage }`.
+- `State/conversation.slice.js` — `conversation` (sidebar list sorted by `lastMessage`), `currentConversation`, `messages` per id (`__new__` key until the server assigns an id), `aiLatestMessage` (the one streaming reply, kept apart so tokens only re-render that bubble). Every stream action carries a `requestId`; stale ones are ignored. `aiMessageStopped` keeps partial text (`stopped: true`). Reset on `sessionCleared`.
+- `Hooks/` — `client.js` (API instance), `useConversation.js` (thunks `loadConversations` / `loadMessages` / `sendMessage` / `stopReply`, `groupByRecency`, list + messages hooks), `useChat.js` (URL ↔ store sync in `useChatRoute`, composer, copy, account, greeting). Leaving the chat page stops the stream.
+- `UI/` — `pages/ChatPage.jsx`; components `ConversationSidebar`, `ChatHeader` (model name hard-coded to match `main.service.js`), `MessageThread` (skeleton, error, empty state with suggestions, thread), `Composer` (send ↔ stop), `MarkdownMessage` (GFM, no raw HTML, code blocks with copy), `MiloMark`, `CopyButton`.
+- Tests: `API/conversation.api.test.js`, `UI/chat.test.jsx` (mock `Hooks/client.js`). `auth.test.jsx` also mocks the conversation client because login now lands on `/chat`.
+- Gotcha: on Windows `npm test -w frontend` can fail with "Vitest failed to find the current suite" (drive-letter casing of the cwd). Run `npx vitest run` inside `frontend/` instead.
+- Production bundle is ~745 KB because of react-markdown; lazy-loading `ChatPage` would split it if needed.
 - `AccountPage` mentions AI model names as future direction only — no integrations exist yet.
 
 ## Working agreements (for Claude)
 
 - After any significant change (new library, folder, convention, decision, gotcha), update this file, the auto-memory, and claude-mem **without being asked**.
-- The user is building the conversation feature themselves. Don't edit their WIP files unless asked.
+- The user builds the backend conversation feature themselves; don't edit their backend WIP files unless asked. The frontend conversation feature was built by Claude on request (Nov 2026).
 - Explain things in simple English; the user is learning.
 
 ## Conventions

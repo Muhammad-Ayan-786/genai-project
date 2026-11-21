@@ -15,7 +15,7 @@ const path = '/api/v1/conversation';
 before(async () => {
   database = await MongoMemoryServer.create();
   process.env.NODE_ENV = 'test';
-  process.env.MONGODB_URI = database.getUri('downbot_conversation_test');
+  process.env.MONGODB_URI = database.getUri('milo_conversation_test');
   process.env.ACCESS_TOKEN_SECRET = randomBytes(48).toString('hex');
   process.env.REFRESH_TOKEN_SECRET = randomBytes(48).toString('hex');
   // Fake key: these tests never call Groq, they only read from the database.

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BRAND } from '../../../shared/brand.js';
 
 export function getApiError(error) {
   if (axios.isAxiosError(error)) {
@@ -7,9 +8,9 @@ export function getApiError(error) {
       return { message: body.message, fields: Array.isArray(body.errors) ? body.errors : [] };
     }
     if (!error.response) {
-      return { message: 'We could not reach Downbot. Check your connection and try again.', fields: [] };
+      return { message: `We could not reach ${BRAND.name}. Check your connection and try again.`, fields: [] };
     }
-    return { message: 'Downbot is temporarily unavailable. Please try again.', fields: [] };
+    return { message: `${BRAND.name} is temporarily unavailable. Please try again.`, fields: [] };
   }
   console.error('Unexpected authentication error:', error);
   return { message: 'Something went wrong. Please try again.', fields: [] };

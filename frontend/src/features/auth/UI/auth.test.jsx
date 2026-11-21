@@ -6,11 +6,16 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../../app/routes.jsx';
 import authReducer, { sessionCleared, sessionReceived } from '../State/auth.slice.js';
+import conversationReducer from '../../conversation/State/conversation.slice.js';
 import { authApi } from '../Hooks/session.js';
+import { conversationApi } from '../../conversation/Hooks/client.js';
 
 vi.mock('../Hooks/session.js', () => ({
   initializeSession: vi.fn(),
   authApi: { login: vi.fn(), register: vi.fn(), logout: vi.fn(), me: vi.fn() },
+}));
+vi.mock('../../conversation/Hooks/client.js', () => ({
+  conversationApi: { list: vi.fn(), messages: vi.fn(), send: vi.fn() },
 }));
 
 const session = {
@@ -19,7 +24,7 @@ const session = {
 };
 
 function setup(path = '/login', authenticated = false) {
-  const store = configureStore({ reducer: { auth: authReducer } });
+  const store = configureStore({ reducer: { auth: authReducer, conversation: conversationReducer } });
   store.dispatch(authenticated ? sessionReceived(session) : sessionCleared());
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(<Provider store={store}><RouterProvider router={router} /></Provider>);
@@ -28,6 +33,7 @@ function setup(path = '/login', authenticated = false) {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  conversationApi.list.mockResolvedValue([]);
   window.localStorage.clear();
   window.sessionStorage.clear();
 });
@@ -54,7 +60,8 @@ describe('authentication UI', () => {
     await user.type(screen.getByLabelText('Email address'), 'alex@example.com');
     await user.type(screen.getByLabelText('Password'), 'thoughtful1');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
-    expect(await screen.findByRole('heading', { name: "You're home, Alex." })).toBeVisible();
+    // Signing up lands straight in the chat, greeted by first name.
+    expect(await screen.findByRole('heading', { name: /, Alex.$/ })).toBeVisible();
     expect(authApi.register).toHaveBeenCalledWith({
       name: 'Alex Morgan', email: 'alex@example.com', password: 'thoughtful1',
     });
@@ -94,8 +101,14 @@ describe('authentication UI', () => {
     expect(store.getState().auth.accessToken).toBeNull();
   });
 
-  it('refreshes the protected profile and redirects authenticated users away from login', async () => {
-    const { user } = setup('/login', true);
+  it('redirects authenticated users away from login to the chat', async () => {
+    setup('/login', true);
+    expect(await screen.findByRole('heading', { name: /, Alex.$/ })).toBeVisible();
+    expect(screen.getByRole('navigation', { name: 'Conversations' })).toBeVisible();
+  });
+
+  it('refreshes the protected profile', async () => {
+    const { user } = setup('/account', true);
     authApi.me.mockResolvedValue({ ...session.user, name: 'Jordan Thinker' });
     await user.click(screen.getByRole('button', { name: 'Refresh account details' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: "You're home, Jordan." })).toBeVisible());

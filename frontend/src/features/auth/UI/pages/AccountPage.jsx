@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { ArrowUpRight, Check, LogOut, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAccount } from '../../Hooks/useAuth.js';
 import { PageShell } from '../components/PageShell.jsx';
@@ -58,10 +59,9 @@ export function AccountPage() {
                 ))}
               </div>
             </div>
-            <p className="mt-10 flex items-start gap-2 text-xs leading-6 text-muted">
-              <ArrowUpRight size={16} className="mt-1 shrink-0" />
-              Chat is not available yet. For now, your account is ready.
-            </p>
+            <Link to="/chat" className="button-primary mt-10 self-start">
+              Open your chats <ArrowUpRight size={16} />
+            </Link>
           </section>
         </div>
         <p className="mt-7 flex items-center justify-center gap-2 text-[11px] text-muted">
