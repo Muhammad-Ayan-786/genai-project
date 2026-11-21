@@ -116,6 +116,9 @@ test('unknown or malformed conversation ids fail cleanly', async () => {
   const response = await request(app)
     .get(`${path}/messages/not-an-id`)
     .set(auth(user.token))
-    .expect(400);
+    .expect(422);
   assert.equal(response.body.success, false);
+  assert.deepEqual(response.body.errors, [
+    { field: 'conversationId', message: 'Conversation must be a valid id' },
+  ]);
 });

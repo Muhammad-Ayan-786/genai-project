@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
-import { sendMessageValidator } from '../validators/conversation.validator.js';
+import { conversationIdParamValidator, sendMessageValidator } from '../validators/conversation.validator.js';
 import { getAllConversations, handleMessage, getAllMessagesByConversation } from '../controller/conversation.controller.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -33,7 +33,7 @@ router.get("/", requireAuth, asyncHandler(getAllConversations));
  * @desc get all the messages of a specific conversation
  * req.params should contain the conversation ID
  */
-router.get("/messages/:conversationId", requireAuth, asyncHandler(getAllMessagesByConversation));
+router.get("/messages/:conversationId", requireAuth, conversationIdParamValidator, validate, asyncHandler(getAllMessagesByConversation));
 
 
 

@@ -1,4 +1,4 @@
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 
 /**
  * Rules for sending a message: `content` is a required non-blank string, and
@@ -14,5 +14,14 @@ export const sendMessageValidator = [
     .custom((value) => value.trim().length > 0).withMessage('Message content cannot be empty'),
   body('conversation')
     .optional({ values: 'null' })
+    .isMongoId().withMessage('Conversation must be a valid id'),
+];
+
+/**
+ * Rules for routes with a `:conversationId` URL param: it must be a valid ObjectId.
+ * Ownership of the conversation must still be checked by the controller.
+ */
+export const conversationIdParamValidator = [
+  param('conversationId')
     .isMongoId().withMessage('Conversation must be a valid id'),
 ];

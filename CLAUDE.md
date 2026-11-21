@@ -9,7 +9,7 @@ authentication starter. Auth (register/login/refresh/logout/me) is complete and 
 The **conversation/chat feature is in progress**: the backend (`POST` SSE streaming, list
 conversations, list messages) works; the frontend is not built yet.
 
-The design sketch in `00018-genai-project.excalidraw` defines the conversation/message
+The design sketch in `genai-project.excalidraw` defines the conversation/message
 schemas and the `POST /api/v1/conversation` flow (no `conversation` id → create a new
 conversation; otherwise continue it).
 
@@ -90,7 +90,7 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 
 - `models/conversation.model.js` — `user`, `title` (default "New conversation"), `lastMessage`; timestamps `createdAt` / `lastUpdate`; index `{ user: 1, lastMessage: -1 }`.
 - `models/message.model.js` — `role` ∈ `user | assistant | tool`, `content`, `conversation`; index `{ conversation: 1, createdAt: 1 }`.
-- `validators/conversation.validator.js` — `content` (required non-blank string), `conversation` (optional MongoId). The body field is **`conversation`**, not `conversationId`.
+- `validators/conversation.validator.js` — `sendMessageValidator`: `content` (required non-blank string), `conversation` (optional MongoId); the body field is **`conversation`**, not `conversationId`. `conversationIdParamValidator`: URL param `:conversationId` must be a MongoId.
 - `routes/conversation.routes.js` — `POST /` → `requireAuth, sendMessageValidator, validate, asyncHandler(handleMessage)`.
 - `controller/conversation.controller.js` — `handleMessage` works and **streams the reply over SSE** (`text/event-stream`, events are `data: {json}\n\n`):
   - New conversation: `generateTitle` (wrapped in try/catch → falls back to "New Conversation"). Existing one: `findConversationByIdAndUser` → `404` if not owned.
@@ -100,7 +100,7 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 - `DAO/conversation.dao.js` — `createConversation`, `findConversationByIdAndUser`, `findConversationsByUser` (sorted `lastMessage: -1`), `updateLastMessage`. `DAO/message.dao.js` — `createMessage`, `findMessagesByConversation`.
 - `services/ai/` — LangChain: `ai-title.service.js` (Groq, structured `{ title }` ≤50 chars, user text wrapped in `<message>` tags, truncated to 2000 chars) and `main.service.js` (chat model). Needs `GROQ_API_KEY` in env.
 - `requireAuth` must keep loading the user from the DB (`req.user` is a Mongoose doc with `_id`). The JWT payload only has `id`/`email`; using it directly breaks `/me` tests and `user._id` in the conversation controller.
-- `GET /` → `getAllConversations` (user's conversations, newest `lastMessage` first). `GET /messages/:conversationId` → `getAllMessagesByConversation` (ownership-checked, `404` if not owned/missing, `400` CastError on malformed id). Both `requireAuth` + `asyncHandler`.
+- `GET /` → `getAllConversations` (user's conversations, newest `lastMessage` first). `GET /messages/:conversationId` → `getAllMessagesByConversation` (ownership-checked, `404` if not owned/missing; malformed id → `422` via `conversationIdParamValidator` + `validate`). Both `requireAuth` + `asyncHandler`.
 - Tests: `backend/test/conversation.test.js` covers the two GET endpoints (sets a fake `GROQ_API_KEY`; never calls Groq). The streaming POST is not tested yet (would need a mocked model).
 - Missing: POST/SSE tests and the frontend `features/chat/` slice (POST + SSE means `fetch` stream reading, not `EventSource`).
 - `AccountPage` mentions AI model names as future direction only — no integrations exist yet.
