@@ -1,6 +1,7 @@
 import { AppError } from '../utils/AppError.js';
+import { sendSuccess } from '../utils/apiResponse.js';
 import { generateTitle } from '../services/ai/ai-title.service.js';
-import { createConversation, findConversationByIdAndUser, updateLastMessage } from '../DAO/conversation.dao.js';
+import { createConversation, findConversationByIdAndUser, findConversationsByUser, updateLastMessage } from '../DAO/conversation.dao.js';
 import model from '../services/ai/main.service.js';
 import { createMessage, findMessagesByConversation } from '../DAO/message.dao.js';
 import { AIMessage, HumanMessage } from 'langchain';
@@ -111,4 +112,38 @@ export async function handleMessage(req, res, next) {
             conversation: conversation._id,
         });
     }
+}
+
+
+
+/**
+ * @GET
+ * @route /api/v1/conversation
+ * @desc get all the conversations of the user
+ */
+export async function getAllConversations(req, res) {
+    const user = req.user;
+    const conversations = await findConversationsByUser(user._id);
+    return sendSuccess(res, 200, 'Conversations retrieved successfully', { conversations });
+}
+
+
+/**
+ * @GET
+ * @route /api/v1/conversation/messages/:conversationId
+ * @desc get all the messages of a specific conversation
+ * req.params should contain the conversation ID
+ */
+export async function getAllMessagesByConversation(req, res, next) {
+    const { conversationId } = req.params;
+    const user = req.user;
+
+    const conversation = await findConversationByIdAndUser(conversationId, user._id);
+
+    if (!conversation) {
+        return next(new AppError(404, 'Conversation not found'));
+    }
+
+    const messages = await findMessagesByConversation(conversation._id);
+    return sendSuccess(res, 200, 'Messages retrieved successfully', { messages });
 }

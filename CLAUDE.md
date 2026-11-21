@@ -6,8 +6,8 @@ Guidance for Claude Code when working in this repository.
 
 **Downbot** — a multi-model Generative AI chat app, being built on top of a finished
 authentication starter. Auth (register/login/refresh/logout/me) is complete and tested.
-The **conversation/chat feature is in progress**: the backend `POST /api/v1/conversation`
-(SSE streaming) works; tests, list endpoints and the frontend are not built yet.
+The **conversation/chat feature is in progress**: the backend (`POST` SSE streaming, list
+conversations, list messages) works; the frontend is not built yet.
 
 The design sketch in `00018-genai-project.excalidraw` defines the conversation/message
 schemas and the `POST /api/v1/conversation` flow (no `conversation` id → create a new
@@ -100,7 +100,9 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 - `DAO/conversation.dao.js` — `createConversation`, `findConversationByIdAndUser`, `findConversationsByUser` (sorted `lastMessage: -1`), `updateLastMessage`. `DAO/message.dao.js` — `createMessage`, `findMessagesByConversation`.
 - `services/ai/` — LangChain: `ai-title.service.js` (Groq, structured `{ title }` ≤50 chars, user text wrapped in `<message>` tags, truncated to 2000 chars) and `main.service.js` (chat model). Needs `GROQ_API_KEY` in env.
 - `requireAuth` must keep loading the user from the DB (`req.user` is a Mongoose doc with `_id`). The JWT payload only has `id`/`email`; using it directly breaks `/me` tests and `user._id` in the conversation controller.
-- Missing: conversation backend tests, list-conversations / get-messages endpoints, and the frontend `features/chat/` slice (POST + SSE means `fetch` stream reading, not `EventSource`).
+- `GET /` → `getAllConversations` (user's conversations, newest `lastMessage` first). `GET /messages/:conversationId` → `getAllMessagesByConversation` (ownership-checked, `404` if not owned/missing, `400` CastError on malformed id). Both `requireAuth` + `asyncHandler`.
+- Tests: `backend/test/conversation.test.js` covers the two GET endpoints (sets a fake `GROQ_API_KEY`; never calls Groq). The streaming POST is not tested yet (would need a mocked model).
+- Missing: POST/SSE tests and the frontend `features/chat/` slice (POST + SSE means `fetch` stream reading, not `EventSource`).
 - `AccountPage` mentions AI model names as future direction only — no integrations exist yet.
 
 ## Working agreements (for Claude)
