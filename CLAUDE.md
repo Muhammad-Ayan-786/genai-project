@@ -6,8 +6,8 @@ Guidance for Claude Code when working in this repository.
 
 **Downbot** — a multi-model Generative AI chat app, being built on top of a finished
 authentication starter. Auth (register/login/refresh/logout/me) is complete and tested.
-The **conversation/chat feature is in progress** (models + validator exist; controller,
-DAO, route wiring, LLM integration, and frontend are not built yet).
+The **conversation/chat feature is in progress**: the backend `POST /api/v1/conversation`
+(SSE streaming) works; tests, list endpoints and the frontend are not built yet.
 
 The design sketch in `00018-genai-project.excalidraw` defines the conversation/message
 schemas and the `POST /api/v1/conversation` flow (no `conversation` id → create a new
@@ -91,9 +91,16 @@ Strict layering: **routes → (validators + validate middleware) → controller 
 - `models/conversation.model.js` — `user`, `title` (default "New conversation"), `lastMessage`; timestamps `createdAt` / `lastUpdate`; index `{ user: 1, lastMessage: -1 }`.
 - `models/message.model.js` — `role` ∈ `user | assistant | tool`, `content`, `conversation`; index `{ conversation: 1, createdAt: 1 }`.
 - `validators/conversation.validator.js` — `content` (required non-blank string), `conversation` (optional MongoId). The body field is **`conversation`**, not `conversationId`.
-- `routes/conversation.routes.js` — `router.post("/", requireAuth, sendMessageValidator, validate)` **has no final handler yet**; `handleMessage` is not wired in (needs `asyncHandler(handleMessage)`).
-- `controller/conversation.controller.js` — `handleMessage` is a stub; has unused imports (`env`, `sendSuccess`) that will trip `npm run lint`.
-- Missing: `DAO/conversation.dao.js` / `message.dao.js`, ownership check that the conversation belongs to `req.user`, LLM service in `services/`, LLM API keys in `env.js` / `.env.example`, backend tests, and the frontend `features/chat/` slice.
+- `routes/conversation.routes.js` — `POST /` → `requireAuth, sendMessageValidator, validate, asyncHandler(handleMessage)`.
+- `controller/conversation.controller.js` — `handleMessage` works and **streams the reply over SSE** (`text/event-stream`, events are `data: {json}\n\n`):
+  - New conversation: `generateTitle` (wrapped in try/catch → falls back to "New Conversation"). Existing one: `findConversationByIdAndUser` → `404` if not owned.
+  - Loads history (`findMessagesByConversation`, sorted `createdAt: 1`), maps to LangChain `HumanMessage`/`AIMessage`, appends the new message, saves the user message, then `updateLastMessage`.
+  - SSE events: first `{ conversationId, title }`, then `{ chunk }` per piece, `{ error }` if the stream fails midway. `res.end()` in `finally`. The assistant message is saved only if the stream finished and isn't empty.
+- `middleware/error.middleware.js` — if `res.headersSent` (e.g. mid-SSE), it logs and calls `next(error)` instead of sending JSON.
+- `DAO/conversation.dao.js` — `createConversation`, `findConversationByIdAndUser`, `findConversationsByUser` (sorted `lastMessage: -1`), `updateLastMessage`. `DAO/message.dao.js` — `createMessage`, `findMessagesByConversation`.
+- `services/ai/` — LangChain: `ai-title.service.js` (Groq, structured `{ title }` ≤50 chars, user text wrapped in `<message>` tags, truncated to 2000 chars) and `main.service.js` (chat model). Needs `GROQ_API_KEY` in env.
+- `requireAuth` must keep loading the user from the DB (`req.user` is a Mongoose doc with `_id`). The JWT payload only has `id`/`email`; using it directly breaks `/me` tests and `user._id` in the conversation controller.
+- Missing: conversation backend tests, list-conversations / get-messages endpoints, and the frontend `features/chat/` slice (POST + SSE means `fetch` stream reading, not `EventSource`).
 - `AccountPage` mentions AI model names as future direction only — no integrations exist yet.
 
 ## Working agreements (for Claude)

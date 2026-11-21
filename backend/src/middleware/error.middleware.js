@@ -5,7 +5,14 @@ import { AppError } from '../utils/AppError.js';
  * @type {import('express').ErrorRequestHandler}
  * Converts every failure to the shared API envelope without exposing unknown failures.
  */
-export function errorHandler(error, _req, res, _next) {
+export function errorHandler(error, _req, res, next) {
+  // If the response already started (e.g. an SSE stream), we can't send JSON anymore.
+  // Hand it to Express's built-in handler, which just closes the connection.
+  if (res.headersSent) {
+    console.error('Error after response started:', error);
+    return next(error);
+  }
+
   let status = 500;
   let message = 'Internal server error';
   let errors = [];
