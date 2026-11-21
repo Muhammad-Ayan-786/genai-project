@@ -8,6 +8,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/AppError.js';
 
 const router = Router();
+
 const credentialsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 30,
@@ -17,10 +18,16 @@ const credentialsLimiter = rateLimit({
   handler: (_req, _res, next) => next(new AppError(429, 'Too many attempts. Try again in 15 minutes.')),
 });
 
+
 router.post('/register', credentialsLimiter, registerValidator, validate, asyncHandler(register));
+
 router.post('/login', credentialsLimiter, loginValidator, validateLogin, asyncHandler(login));
+
 router.post('/refresh', asyncHandler(refresh));
+
 router.post('/logout', asyncHandler(logout));
+
 router.get('/me', requireAuth, asyncHandler(me));
+
 
 export default router;
