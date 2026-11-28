@@ -14,9 +14,10 @@ import { motion, prefersReducedMotion } from './motion.js';
  * @param {string} [options.targets] Selector, searched inside the scope element.
  * @param {number} [options.delay] Seconds to wait before starting.
  * @param {number} [options.y] Distance in px to rise from.
+ * @param {boolean} [options.onScroll] Wait until the container scrolls into view.
  * @returns {import('react').RefObject<HTMLElement>} Ref to attach to the container.
  */
-export function useReveal({ targets = '[data-reveal]', delay = 0, y = motion.distance } = {}) {
+export function useReveal({ targets = '[data-reveal]', delay = 0, y = motion.distance, onScroll = false } = {}) {
   const scope = useRef(null);
 
   useGSAP(() => {
@@ -31,6 +32,7 @@ export function useReveal({ targets = '[data-reveal]', delay = 0, y = motion.dis
       ease: motion.ease.out,
       stagger: motion.stagger,
       clearProps: 'opacity,visibility,transform', // leave no inline styles behind
+      ...(onScroll && { scrollTrigger: { trigger: scope.current, start: 'top 82%', once: true } }),
     });
   }, { scope });
 

@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../../app/routes.jsx';
 import authReducer, { sessionCleared, sessionReceived } from '../../auth/State/auth.slice.js';
 import conversationReducer from '../State/conversation.slice.js';
@@ -176,5 +176,30 @@ describe('groupByRecency', () => {
     expect(groups.map(({ label, items }) => [label, items.map(({ id }) => id)])).toEqual([
       ['Today', ['a']], ['Yesterday', ['b']], ['Previous 7 days', ['c']], ['Previous 30 days', ['d']], ['Older', ['e']],
     ]);
+  });
+
+  describe('on a large screen', () => {
+    beforeEach(() => {
+      window.localStorage.clear();
+      // Every media query "matches": a desktop screen that also prefers reduced motion.
+      vi.stubGlobal('matchMedia', (query) => ({
+        matches: true, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      }));
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('collapses the sidebar to an icon rail and remembers the choice', async () => {
+      const { user } = setup();
+      await history();
+      await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+      expect(screen.queryByRole('navigation', { name: 'Conversations' })).toBeNull();
+      const sidebar = screen.getByRole('complementary', { name: 'Conversation history' });
+      expect(within(sidebar).getByRole('button', { name: 'New chat' })).toBeVisible();
+      expect(window.localStorage.getItem('milo-sidebar')).toBe('collapsed');
+
+      await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+      expect(await history()).toBeVisible();
+      expect(window.localStorage.getItem('milo-sidebar')).toBe('expanded');
+    });
   });
 });

@@ -19,12 +19,14 @@ function CodeBlock({ node: _node, children, ...props }) {
   const language = /language-([\w+#-]+)/.exec(code?.props.className ?? '')?.[1];
   const text = textOf(code?.props.children).replace(/\n$/, '');
   return (
-    <div className="overflow-hidden rounded-xl border border-code-line bg-code font-sans">
-      <div className="flex items-center justify-between border-b border-code-line py-1 pr-1.5 pl-4">
-        <span className="font-mono text-[11px] text-muted lowercase">{language ?? 'code'}</span>
-        <CopyButton text={text} label="Copy code" />
+    <div className="overflow-hidden rounded-2xl border border-code-line bg-code font-sans shadow-[var(--shadow-soft)]">
+      <div className="flex items-center justify-between border-b border-code-line py-1.5 pr-2 pl-4">
+        <span className="flex items-center gap-2 font-label text-[11px] tracking-[0.1em] text-code-ink/60 uppercase">
+          <span className="size-1.5 rounded-full bg-honey" aria-hidden="true" />{language ?? 'code'}
+        </span>
+        <CopyButton text={text} label="Copy code" tone="code" />
       </div>
-      <pre {...props} className="chat-scroll overflow-x-auto px-4 py-3.5 font-mono text-[13px] leading-6 text-ink">
+      <pre {...props} className="overflow-x-auto px-5 py-4 font-mono text-[13px] leading-6 text-code-ink">
         {children}
       </pre>
     </div>
@@ -35,7 +37,7 @@ const components = {
   pre: CodeBlock,
   // Wide tables scroll inside the message instead of stretching the thread.
   table: ({ node: _node, ...props }) => (
-    <div className="markdown-table chat-scroll">
+    <div className="markdown-table">
       <table {...props} />
     </div>
   ),

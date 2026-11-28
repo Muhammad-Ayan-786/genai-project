@@ -111,7 +111,7 @@ export function useCopy() {
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), 1600);
     } catch {
-      notify.error('Could not copy', 'Your browser blocked clipboard access. Select the text and copy it instead.', { id: 'copy' });
+      notify.error('Couldn’t copy', 'select the text instead', { id: 'copy' });
     }
   }, []);
 

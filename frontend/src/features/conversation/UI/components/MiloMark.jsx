@@ -1,22 +1,15 @@
+import { LogoMark } from '../../../../shared/ui/Logo.jsx';
+
 /**
- * The Milo logo mark (speech bubble + down chevron) without the wordmark.
- * `thinking` makes the chevron drop on a loop, the chat's "I'm working on it" signal.
- * Fill comes from `currentColor`; `ink` colors the strokes.
+ * Milo's avatar next to every answer: the mascot. While Milo is thinking its
+ * eyes look around and it bobs gently, the chat's "I'm working on it" signal.
+ * `animate` (used by the big empty-state mark) pops it in and keeps it blinking.
+ * @param {{ thinking?: boolean, size?: string, animate?: boolean }} props
  */
-export function MiloMark({ className = 'size-7 text-forest', ink = 'var(--color-canvas)', thinking = false }) {
+export function MiloMark({ thinking = false, size = 'size-4', animate = false }) {
   return (
-    <svg className={`${className} ${thinking ? 'mark-thinking' : ''}`} viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <rect width="40" height="40" rx="12" fill="currentColor" />
-      <path d="M12 12h16v13H17l-5 4V12Z" stroke={ink} strokeWidth="2" strokeLinejoin="round" />
-      <path
-        className="mark-chevron"
-        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-        d="m16 18 4 4 4-4"
-        stroke={ink}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <span aria-hidden="true" className={`relative inline-flex shrink-0 items-center justify-center ${size}`}>
+      <LogoMark className="size-full" thinking={thinking} animate={animate} alive={animate} />
+    </span>
   );
 }

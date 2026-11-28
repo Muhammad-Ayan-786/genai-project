@@ -2,34 +2,139 @@
 /* All colors, fonts and shadows (light + dark) live in theme.css. */
 @import "./theme.css";
 
+/* Saffron gradient with a soft top highlight and a warm under-glow (the premium button surface). */
+@utility btn-sun {
+  background-image: linear-gradient(180deg, var(--color-primary-top), var(--color-primary-bottom));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.42), 0 8px 20px -10px var(--color-primary-bottom);
+  transition: filter 200ms, box-shadow 200ms;
+  &:hover:not(:disabled) {
+    filter: brightness(1.04) saturate(1.05);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 12px 26px -10px var(--color-primary-bottom);
+  }
+}
+
+/* Your chat bubble: the same rich saffron as the main button (roast in dark mode). */
+@utility bubble-sun {
+  background-image: linear-gradient(180deg, var(--color-bubble-top), var(--color-bubble-bottom));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 6px 16px -10px var(--color-bubble-bottom);
+  color: var(--color-on-bubble);
+}
+
 @layer base {
   body { @apply m-0 bg-canvas font-sans text-ink antialiased; }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
   button, a, input { -webkit-tap-highlight-color: transparent; }
   button:not(:disabled), a { cursor: pointer; }
   button:disabled { cursor: not-allowed; }
-  textarea { caret-color: var(--color-forest); }
-  :focus-visible { @apply outline-2 outline-offset-4 outline-forest; }
-  ::selection { @apply bg-sage text-forest; }
+  textarea, input { caret-color: var(--color-honey-deep); }
+  :focus-visible { @apply outline-2 outline-offset-4 outline-honey; }
+  ::selection { @apply bg-honey-soft text-ink; }
+
+  /* While the theme switches, every color cross-fades for a moment. */
+  .theme-fading, .theme-fading *, .theme-fading *::before, .theme-fading *::after {
+    transition: background-color 420ms ease, border-color 420ms ease, color 420ms ease, fill 420ms ease !important;
+  }
 }
 
 @layer components {
-  .eyebrow { @apply text-[10px] font-semibold tracking-[0.18em] text-forest uppercase; }
+
+  /* Tiny uppercase label: "A WARM PLACE TO THINK", "TODAY", ... */
+  .label { @apply font-label text-[11px] font-medium tracking-[0.14em] text-faint uppercase; }
+  .eyebrow { @apply font-label text-[11px] font-medium tracking-[0.14em] text-faint uppercase; }
+
+  /* Pill buttons. Primary = espresso by day, honey by night. */
+  .btn {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.98] disabled:opacity-60;
+  }
+  .btn-primary { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.98] disabled:opacity-60 btn-sun text-on-primary; }
+  .btn-ghost { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.98] disabled:opacity-60 border border-line-strong text-ink hover:border-ink/40 hover:bg-surface/60; }
+  .btn-sm { @apply min-h-10 px-5 text-sm; }
+
   .form-input {
-    @apply h-[52px] w-full rounded-lg border border-field-line bg-field px-4 text-sm text-ink transition-colors placeholder:text-placeholder focus:border-forest focus:bg-surface focus:outline-2 focus:outline-offset-2 focus:outline-forest;
+    @apply h-[52px] w-full rounded-[14px] border border-field-line bg-field px-4 text-[15px] text-ink transition-[border-color,box-shadow] placeholder:text-placeholder focus:border-honey focus:shadow-[0_0_0_4px_var(--color-honey-soft)] focus:outline-none;
   }
-  .button-primary {
-    @apply inline-flex min-h-[52px] items-center justify-center gap-3 rounded-lg bg-forest px-5 py-3 text-[13px] font-semibold text-on-forest transition-colors hover:bg-forest-hover disabled:opacity-60;
+  .button-primary { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.98] disabled:opacity-60 btn-sun text-on-primary min-h-[52px]; }
+  .button-secondary { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.98] disabled:opacity-60 border border-line-strong text-ink hover:border-ink/40 hover:bg-surface/60 min-h-11; }
+  .text-link { @apply rounded-sm font-medium text-ink underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-clay disabled:opacity-60; }
+
+  /* ── Atmosphere ─────────────────────────────────────────────────────── */
+
+  /* The soft "morning sun" behind heroes. It breathes very slowly. */
+  .sun-glow {
+    background: radial-gradient(closest-side, var(--color-glow), transparent);
+    animation: sun-breathe 9s ease-in-out infinite;
   }
-  .button-secondary {
-    @apply inline-flex min-h-11 items-center justify-center rounded-lg border border-line bg-transparent py-2 font-medium text-forest transition-colors hover:bg-sage disabled:opacity-60;
+  /* Faint paper grain over a section (purely decorative). */
+  .grain::after {
+    content: '';
+    position: fixed;
+    z-index: 50;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
-  .text-link { @apply rounded-sm font-semibold text-forest underline-offset-4 hover:underline disabled:opacity-60; }
+  :root[data-theme="dark"] .grain::after { mix-blend-mode: screen; opacity: 0.035; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .grain::after { mix-blend-mode: screen; opacity: 0.035; }
+  }
+  .sun-dot { box-shadow: 0 0 0 4px var(--color-glow); }
+  /* Card hover light: the card's hairline edge lights up in saffron near the pointer,
+     with a faint pearly sheen inside (set --spot-x / --spot-y on pointer move). */
+  .spotlight { isolation: isolate; }
+  .spotlight::before, .spotlight::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 500ms;
+  }
+  .spotlight::before {
+    z-index: -1;
+    background: radial-gradient(340px circle at var(--spot-x, 50%) var(--spot-y, 50%), var(--color-sheen), transparent 70%);
+  }
+  .spotlight::after {
+    padding: 1px;
+    background: radial-gradient(220px circle at var(--spot-x, 50%) var(--spot-y, 50%), var(--color-honey), transparent 75%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  .spotlight:hover::before, .spotlight:hover::after { opacity: 1; }
+
+  /* Italic accent word in a headline, with a saffron marker stroke under it (GSAP draws it in). */
+  .accent {
+    font-style: italic;
+    color: var(--color-accent-text);
+    padding-inline: 0.06em;
+    background-image: linear-gradient(var(--color-accent-mark), var(--color-accent-mark));
+    background-repeat: no-repeat;
+    background-position: 0 93%;
+    background-size: 100% 0.085em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .theme-icon { animation: icon-in 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+  /* Blinking honey caret for streaming text (landing demo + chat). */
+  .stream-caret {
+    @apply ml-0.5 inline-block h-[1.05em] w-[0.42em] translate-y-[0.18em] rounded-[2px] bg-honey;
+    animation: caret-blink 1s steps(2, start) infinite;
+  }
+
+  .thinking-dot { animation: thinking-dot 1.1s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sun-glow, .theme-icon, .stream-caret, .thinking-dot { animation: none; }
+  }
 
   /* ── Chat ─────────────────────────────────────────────────────────────── */
 
-  /* Thin, palette-colored scrollbars for the chat panes. */
-  .chat-scroll { scrollbar-width: thin; scrollbar-color: var(--color-line) transparent; }
-  .shell-scroll { scrollbar-width: thin; scrollbar-color: var(--color-shell-line) transparent; }
+  /* (Scrollbars are styled globally at the bottom of this file.) */
 
   /* AI answers: a serif built for long reading, sans for structure. */
   .markdown {
@@ -38,60 +143,113 @@
   }
   .markdown > * + * { @apply mt-[1.1em]; }
   .markdown :where(h1, h2, h3, h4) {
-    @apply font-sans font-semibold tracking-[-0.01em] text-ink text-balance;
+    @apply font-serif font-medium tracking-[-0.015em] text-ink text-balance;
     margin-top: 1.6em;
   }
   .markdown > :first-child { margin-top: 0; }
-  .markdown h1 { @apply text-[1.45rem] leading-snug; }
-  .markdown h2 { @apply text-[1.25rem] leading-snug; }
-  .markdown h3 { @apply text-[1.08rem]; }
-  .markdown h4 { @apply text-base; }
+  .markdown h1 { @apply text-[1.6rem] leading-snug; }
+  .markdown h2 { @apply text-[1.38rem] leading-snug; }
+  .markdown h3 { @apply text-[1.15rem]; }
+  .markdown h4 { @apply text-[1.05rem]; }
   .markdown :where(h1, h2, h3, h4) + * { @apply mt-[0.6em]; }
   .markdown strong { @apply font-semibold text-ink; }
-  .markdown a { @apply font-medium text-forest underline decoration-forest/40 underline-offset-[3px] hover:decoration-forest; }
+  .markdown a { @apply text-honey-deep underline decoration-honey/60 underline-offset-[3px] transition-colors hover:decoration-honey-deep; }
   .markdown :where(ul, ol) { @apply space-y-[0.45em] pl-[1.4em]; }
   .markdown ul { @apply list-disc; }
   .markdown ol { @apply list-decimal; }
-  .markdown li::marker { @apply text-muted; }
+  .markdown li::marker { @apply font-label text-[0.8em] text-clay; }
   .markdown li > :where(ul, ol) { @apply mt-[0.45em]; }
-  .markdown blockquote { @apply border-l border-chip-line pl-5 text-muted italic; }
+  .markdown blockquote { @apply border-l-2 border-honey pl-5 text-muted italic; }
   .markdown hr { @apply my-8 border-line; }
   .markdown :not(pre) > code {
     @apply rounded-md bg-inline-code px-[0.35em] py-[0.12em] font-mono text-[0.84em] text-ink;
   }
-  .markdown-table { @apply overflow-x-auto rounded-xl border border-line; }
+  .markdown-table { @apply overflow-x-auto rounded-2xl border border-line; }
   .markdown table { @apply w-full border-collapse font-sans text-sm tabular-nums; }
-  .markdown th { @apply border-b border-line bg-code px-4 py-2.5 text-left font-semibold; }
+  .markdown th { @apply border-b border-line bg-raised px-4 py-2.5 text-left font-semibold; }
   .markdown td { @apply border-b border-line px-4 py-2.5 align-top; }
   .markdown tr:last-child td { @apply border-b-0; }
-  .markdown input[type="checkbox"] { @apply mr-2 accent-forest; }
+  .markdown input[type="checkbox"] { @apply mr-2 accent-honey; }
 
   /* Soft blinking caret at the end of a streaming answer. */
   .markdown-streaming > :last-child::after {
     content: '';
-    @apply ml-1 inline-block h-[1em] w-[0.45em] translate-y-[0.16em] rounded-[2px] bg-forest;
+    @apply ml-1 inline-block h-[1em] w-[0.42em] translate-y-[0.16em] rounded-[2px] bg-honey;
     animation: caret-blink 1s steps(2, start) infinite;
   }
 
-  /* The Milo mark "drops" its chevron while thinking: the signature moment. */
-  .mark-thinking .mark-chevron { animation: chevron-drop 1.1s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+  /* Milo's sun sends out soft ripples while thinking: the signature moment. */
+  .sun-ripple { animation: sun-ripple 1.4s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+  /* The mascot: blinks when you hover it (or a .mascot-host around it);
+     while Milo thinks, its eyes look around and the bubble bobs. */
+  .mascot-bob, .mascot-look, .mascot-eyes { transform-box: fill-box; transform-origin: center; }
+  .mascot:hover .mascot-eyes, .mascot-host:hover .mascot-eyes { animation: mascot-blink 420ms ease-in-out; }
+  .mascot-thinking .mascot-look { animation: mascot-look 2.8s ease-in-out infinite; }
+  .mascot-thinking .mascot-bob { animation: mascot-bob 1.4s ease-in-out infinite; }
 
   /* A new message settles in from just below. */
   .message-enter { animation: message-enter 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 
   @media (prefers-reduced-motion: reduce) {
-    .markdown-streaming > :last-child::after, .mark-thinking .mark-chevron, .message-enter { animation: none; }
+    .markdown-streaming > :last-child::after, .sun-ripple, .mascot-eyes, .mascot-look, .mascot-bob, .message-enter { animation: none !important; }
   }
 }
 
 @keyframes caret-blink { to { opacity: 0; } }
-@keyframes chevron-drop {
-  0% { transform: translateY(-3px); opacity: 0; }
-  35% { opacity: 1; }
-  70% { transform: translateY(2px); opacity: 1; }
-  100% { transform: translateY(4px); opacity: 0; }
+@keyframes sun-breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.82; }
+}
+@keyframes thinking-dot {
+  0%, 100% { opacity: 0.35; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+@keyframes icon-in {
+  from { opacity: 0; transform: rotate(-60deg) scale(0.6); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mascot-blink {
+  0%, 100% { transform: scaleY(1); }
+  40% { transform: scaleY(0.1); }
+}
+@keyframes mascot-look {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(2px, -1.6px); }
+  55% { transform: translate(-2px, -1.6px); }
+  78% { transform: translate(0, 0.6px); }
+}
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.6px); }
+}
+@keyframes sun-ripple {
+  from { transform: scale(1); opacity: 0.55; }
+  to { transform: scale(3.4); opacity: 0; }
 }
 @keyframes message-enter {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────────────────
+ * A slim floating pill on a clear track, no arrow buttons. It warms to honey
+ * on hover. Chromium/Safari use the ::-webkit-scrollbar rules; Firefox only
+ * understands scrollbar-width/color, so it gets those instead (setting them
+ * in Chromium would switch off the nicer webkit styling).
+ */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-thumb {
+  min-height: 48px;
+  border: 3.5px solid transparent;
+  border-radius: 999px;
+  background-color: var(--color-line-strong);
+  background-clip: padding-box;
+  transition: background-color 200ms;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--color-faint); }
+::-webkit-scrollbar-thumb:active { background-color: var(--color-honey); }
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: var(--color-line-strong) transparent; }
 }

@@ -114,4 +114,15 @@ describe('authentication UI', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: "You're home, Jordan." })).toBeVisible());
     expect(screen.getByRole('status')).toHaveTextContent('up to date');
   });
+
+  it('has a way back to the chats from the account page', async () => {
+    const store = configureStore({ reducer: { auth: authReducer, conversation: conversationReducer } });
+    store.dispatch(sessionReceived(session));
+    const router = createMemoryRouter(routes, { initialEntries: ['/chat', '/account'], initialIndex: 1 });
+    render(<Provider store={store}><RouterProvider router={router} /></Provider>);
+    const user = userEvent.setup();
+    expect(screen.getByRole('heading', { name: "You're home, Alex." })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Back to chats' }));
+    expect(router.state.location.pathname).toBe('/chat');
+  });
 });
