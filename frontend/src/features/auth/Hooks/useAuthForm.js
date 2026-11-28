@@ -67,9 +67,9 @@ export function useAuthForm(mode) {
       const session = await authApi[mode](input);
       const firstName = session.user.name.split(' ')[0];
       if (isRegister) {
-        notify.success(`Welcome to ${BRAND.name}, ${firstName}.`, 'Your space is ready. Make yourself at home.', { id: 'auth' });
+        notify.success(`Welcome to ${BRAND.name}, ${firstName}`, null, { id: 'auth' });
       } else {
-        notify.success(`Welcome back, ${firstName}.`, 'Good to see you again. Pick up right where you left off.', { id: 'auth' });
+        notify.success(`Welcome back, ${firstName}`, null, { id: 'auth' });
       }
       dispatch(sessionReceived(session));
     } catch (error) {

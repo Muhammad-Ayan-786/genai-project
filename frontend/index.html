@@ -5,10 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf8f5" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111412" />
-    <meta name="description" content="Milo. A little less noise. A lot more possibility. Create your account for a calmer place to think." />
-    <title>Milo | Your space to think</title>
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf6ee" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#16130f" />
+    <meta name="description" content="Milo is a warm, calm AI chat. Ask anything and watch the answer arrive word by word." />
+    <title>Milo | Think out loud</title>
+    <!-- Apply the saved theme before anything paints (see src/shared/theme/theme.js). -->
+    <script>
+      try {
+        var t = localStorage.getItem('milo-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

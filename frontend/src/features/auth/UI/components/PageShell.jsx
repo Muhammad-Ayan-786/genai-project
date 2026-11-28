@@ -1,5 +1,5 @@
 import { BRAND } from '../../../../shared/brand.js';
-import { Brand } from './Brand.jsx';
+import { Wordmark } from '../../../../shared/ui/Wordmark.jsx';
 
 export function PageShell({ children, headerAction }) {
   return (
@@ -8,7 +8,7 @@ export function PageShell({ children, headerAction }) {
         Skip to content
       </a>
       <header className="mx-auto flex w-full max-w-[1360px] items-center justify-between gap-6 px-6 py-7 sm:px-10 lg:px-14">
-        <Brand />
+        <Wordmark />
         {headerAction || <span className="hidden text-xs text-muted sm:block">A little less noise. A lot more possibility.</span>}
       </header>
       <main id="main" className="mx-auto flex w-full max-w-[1360px] flex-1 flex-col justify-center px-6 py-6 sm:px-10 lg:px-14 lg:py-10">

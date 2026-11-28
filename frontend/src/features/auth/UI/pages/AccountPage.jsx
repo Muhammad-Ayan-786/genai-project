@@ -1,73 +1,168 @@
+import { useRef } from 'react';
 import { Link } from 'react-router';
-import { ArrowUpRight, Check, LogOut, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, LogOut, Moon, RefreshCw, Sun } from 'lucide-react';
 import { useAccount } from '../../Hooks/useAuth.js';
-import { PageShell } from '../components/PageShell.jsx';
+import { useGoBack } from '../../Hooks/useGoBack.js';
 import { ErrorMessage, Spinner } from '../components/Feedback.jsx';
+import { gsap, useGSAP } from '../../../../shared/animations/gsap.js';
+import { motion, prefersReducedMotion } from '../../../../shared/animations/motion.js';
+import { splitReveal } from '../../../../shared/animations/splitReveal.js';
+import { ThemeToggle } from '../../../../shared/theme/ThemeToggle.jsx';
+import { useTheme } from '../../../../shared/theme/useTheme.js';
+import { Wordmark } from '../../../../shared/ui/Wordmark.jsx';
+
+const THEMES = [
+  { value: 'light', name: 'Daylight', icon: Sun },
+  { value: 'dark', name: 'Candlelight', icon: Moon },
+];
+
+function initials(name) {
+  return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('');
+}
+
+function Card({ children, className = '' }) {
+  return (
+    <section data-account="card" className={`rounded-[28px] border border-line bg-surface p-7 shadow-[var(--shadow-soft)] sm:p-9 ${className}`}>
+      {children}
+    </section>
+  );
+}
+
+/** Light / dark picker: a real setting, saved on this device. */
+function AppearanceCard() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <Card>
+      <p className="label">Appearance</p>
+      <h2 className="mt-3 font-serif text-[26px] leading-tight font-normal">Light or dark</h2>
+      <p className="mt-2 text-[14px] leading-relaxed text-muted">Saved on this device. You can also switch any time with the sun and moon button.</p>
+      <div role="radiogroup" aria-label="Theme" className="mt-6 grid grid-cols-2 gap-2 rounded-full border border-line bg-raised p-1.5">
+        {THEMES.map(({ value, name, icon }) => {
+          const Icon = icon;
+          const active = theme === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => setTheme(value)}
+              className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full text-[14px] transition-[background-color,color,box-shadow] duration-300 ${
+                active ? 'bg-surface text-ink shadow-[var(--shadow-soft)]' : 'text-muted hover:text-ink'
+              }`}
+            >
+              <Icon size={15} strokeWidth={1.7} aria-hidden="true" /> {name}
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
 
 export function AccountPage() {
   const { user, pending, error, notice, logout, reloadProfile } = useAccount();
+  const goBack = useGoBack('/chat');
   const firstName = user.name.split(' ')[0];
+  const memberSince = new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+  const scope = useRef(null);
+
+  useGSAP(() => {
+    if (prefersReducedMotion()) return;
+    const ease = motion.ease.reveal;
+    gsap.from('[data-account="bar"] > *', { autoAlpha: 0, y: -14, duration: 1, ease, stagger: 0.08 });
+    gsap.from('[data-account="label"]', { autoAlpha: 0, y: 14, duration: 1, ease, delay: 0.15 });
+    splitReveal('[data-account="title"]', { delay: 0.25, stagger: 0.07 });
+    gsap.from('[data-account="lede"]', { autoAlpha: 0, y: 16, duration: 1.1, ease, delay: 0.55 });
+    gsap.from('[data-account="card"]', { autoAlpha: 0, y: 40, duration: 1.3, ease, stagger: 0.1, delay: 0.6, clearProps: 'all' });
+    gsap.from('[data-account="avatar"]', { scale: 0.4, rotate: -20, autoAlpha: 0, duration: 1.1, ease: 'back.out(2)', delay: 0.9 });
+  }, { scope });
+
   return (
-    <PageShell headerAction={
-      <button onClick={logout} disabled={Boolean(pending)} className="button-secondary gap-2 px-4 text-xs">
-        {pending === 'logout' ? <Spinner /> : <LogOut size={15} />}
-        {pending === 'logout' ? 'Signing out...' : 'Sign out'}
-      </button>
-    }>
-      <div className="mx-auto w-full max-w-[960px] py-6 sm:py-10">
-        <div className="mb-10">
-          <p className="eyebrow mb-4 flex items-center gap-2"><span className="size-1.5 rounded-full bg-forest" /> Your personal space</p>
-          <h1 className="font-display text-4xl leading-tight font-semibold tracking-[-1.5px] sm:text-5xl">You&apos;re home, {firstName}.</h1>
-          <p className="mt-4 text-sm leading-7 text-muted">A little space of your own. A world of possibility ahead.</p>
-        </div>
-        <div className="mb-6"><ErrorMessage>{error}</ErrorMessage></div>
-        <div className="grid gap-6 md:grid-cols-[1fr_1.15fr]">
-          <section className="rounded-2xl border border-line bg-surface p-7 sm:p-8">
-            <div className="flex items-center justify-between">
-              <span className="flex size-12 items-center justify-center rounded-full bg-sage font-display text-xl font-semibold text-forest">
-                {user.name.slice(0, 1).toUpperCase()}
+    <div ref={scope} className="grain relative isolate min-h-dvh overflow-hidden bg-canvas text-ink">
+      <div className="pointer-events-none absolute -top-96 left-1/2 -z-10 -translate-x-1/2" aria-hidden="true">
+        <div className="sun-glow size-[min(1000px,140vw)]" />
+      </div>
+
+      <header data-account="bar" className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-6 sm:px-8">
+        <button type="button" onClick={goBack} className="group inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-surface/60 px-4 text-[14px] text-muted backdrop-blur-sm transition-colors hover:border-line-strong hover:text-ink">
+          <ArrowLeft size={16} aria-hidden="true" />
+          Back to chats
+        </button>
+        <Wordmark to="/chat" size="sm" className="max-sm:hidden" />
+        <ThemeToggle />
+      </header>
+
+      <main id="main" className="mx-auto max-w-5xl px-5 pt-8 pb-20 sm:px-8 sm:pt-14">
+        <p data-account="label" className="label">Your account</p>
+        <h1 data-account="title" className="mt-4 font-serif text-[clamp(2.6rem,6vw,4.25rem)] leading-[1.04] font-light tracking-[-0.03em]">
+          You&apos;re home, <em className="accent">{firstName}</em>.
+        </h1>
+        <p data-account="lede" className="mt-4 max-w-xl text-[16px] leading-relaxed text-muted">
+          Your details, how Milo looks, and your session, all in one calm place.
+        </p>
+
+        {error && <div className="mt-8 max-w-xl"><ErrorMessage>{error}</ErrorMessage></div>}
+
+        <div className="mt-12 grid gap-5 md:grid-cols-[1.25fr_1fr]">
+          <Card className="md:row-span-2">
+            <div className="flex items-start justify-between gap-4">
+              <span data-account="avatar" aria-hidden="true" className="flex size-16 items-center justify-center rounded-full bg-honey font-serif text-[24px] text-on-honey shadow-[0_0_0_6px_var(--color-honey-soft)]">
+                {initials(user.name)}
               </span>
-              <span className="flex items-center gap-1.5 rounded-full bg-sage px-3 py-1.5 text-[11px] font-medium text-forest">
-                <Check size={12} /> Signed in
+              <span className="label inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5">
+                <Check size={12} className="text-honey-deep" aria-hidden="true" /> Signed in
               </span>
             </div>
-            <h2 className="mt-7 font-display text-xl font-semibold">Your account</h2>
-            <dl className="mt-6 space-y-5 text-sm">
-              <div><dt className="mb-1.5 text-xs text-muted">Name</dt><dd className="break-words font-medium">{user.name}</dd></div>
-              <div><dt className="mb-1.5 text-xs text-muted">Email address</dt><dd className="break-all font-medium">{user.email}</dd></div>
-              <div><dt className="mb-1.5 text-xs text-muted">Member since</dt><dd>{new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</dd></div>
+            <h2 className="mt-7 font-serif text-[30px] leading-tight font-normal break-words">{user.name}</h2>
+            <p className="mt-1 text-[15px] break-all text-muted">{user.email}</p>
+
+            <dl className="mt-8 divide-y divide-line border-y border-line">
+              {[
+                ['Name', user.name],
+                ['Email address', user.email],
+                ['Member since', memberSince],
+              ].map(([term, value]) => (
+                <div key={term} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-4">
+                  <dt className="label">{term}</dt>
+                  <dd className="text-[15px] break-all">{value}</dd>
+                </div>
+              ))}
             </dl>
-            <button disabled={Boolean(pending)} onClick={reloadProfile} className="text-link mt-6 inline-flex min-h-11 items-center gap-2 text-xs">
-              {pending === 'profile' ? <Spinner /> : <RefreshCw size={13} />}
+
+            <button type="button" disabled={Boolean(pending)} onClick={reloadProfile} className="btn-ghost btn-sm mt-7 gap-2">
+              {pending === 'profile' ? <Spinner className="size-4" /> : <RefreshCw size={14} aria-hidden="true" />}
               {pending === 'profile' ? 'Refreshing...' : 'Refresh account details'}
             </button>
-            {notice && <p role="status" className="mt-2 text-xs leading-5 text-forest">{notice}</p>}
-          </section>
-          <section className="flex flex-col justify-between rounded-2xl bg-sage p-7 sm:p-9">
-            <div>
-              <div className="flex items-center justify-between">
-                <Sparkles className="text-forest" size={25} strokeWidth={1.5} />
-                <span className="rounded-full border border-chip-line px-3 py-1.5 text-[10px] font-medium tracking-wide text-forest uppercase">On the horizon</span>
-              </div>
-              <h2 className="mt-9 max-w-xs font-display text-3xl leading-tight font-semibold tracking-[-1px]">One space.<br />More perspectives.</h2>
-              <p className="mt-5 max-w-sm text-sm leading-7 text-muted">
-                We&apos;re imagining a calmer way to work with AI. Your favorite models, thoughtful conversations, and room for your next big idea.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-2">
-                {['Gemini', 'ChatGPT', 'Claude'].map((model) => (
-                  <span key={model} className="rounded-full border border-chip-line px-3 py-1.5 text-xs text-forest">{model}</span>
-                ))}
-              </div>
-            </div>
-            <Link to="/chat" className="button-primary mt-10 self-start">
-              Open your chats <ArrowUpRight size={16} />
-            </Link>
-          </section>
+            {notice && <p role="status" className="mt-3 text-[13px] leading-5 text-honey-deep">{notice}</p>}
+          </Card>
+
+          <AppearanceCard />
+
+          <Card>
+            <p className="label">Session</p>
+            <h2 className="mt-3 font-serif text-[26px] leading-tight font-normal">Signed in on this device</h2>
+            <p className="mt-2 text-[14px] leading-relaxed text-muted">
+              Your session renews itself quietly for up to 7 days. Signing out ends it right away.
+            </p>
+            <button type="button" onClick={logout} disabled={Boolean(pending)} className="btn-ghost btn-sm mt-6 gap-2">
+              {pending === 'logout' ? <Spinner className="size-4" /> : <LogOut size={15} strokeWidth={1.7} aria-hidden="true" />}
+              {pending === 'logout' ? 'Signing out...' : 'Sign out'}
+            </button>
+          </Card>
         </div>
-        <p className="mt-7 flex items-center justify-center gap-2 text-[11px] text-muted">
-          <ShieldCheck size={14} /> Signed in securely. This space is yours.
-        </p>
-      </div>
-    </PageShell>
+
+        <div data-account="card" className="mt-5 flex flex-col items-start justify-between gap-5 rounded-[28px] border border-line bg-raised px-7 py-7 sm:flex-row sm:items-center sm:px-9">
+          <div>
+            <p className="font-serif text-[24px] leading-tight">Ready to pick up where you left off?</p>
+            <p className="mt-1 text-[14px] text-muted">Every conversation is waiting in your sidebar.</p>
+          </div>
+          <Link to="/chat" className="btn-primary group shrink-0">
+            Open your chats
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+      </main>
+    </div>
   );
 }

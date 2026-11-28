@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import toast from 'react-hot-toast';
 import { ToastCard } from './ToastCard.jsx';
 
-const durations = { success: 4000, error: 6000, info: 4500 };
+const durations = { success: 3200, error: 5000, info: 3600 };
 
 function show(variant, title, message, options = {}) {
   return toast.custom(

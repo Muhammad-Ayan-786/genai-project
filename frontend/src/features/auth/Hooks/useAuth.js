@@ -24,7 +24,7 @@ export function useAccount() {
     try {
       await authApi.logout();
       dispatch(sessionCleared());
-      notify.success('Signed out', 'Your space will be right here when you come back.', { id: 'auth' });
+      notify.success('Signed out. See you soon.', null, { id: 'auth' });
     } catch (error) {
       if (error.response?.status === 401) dispatch(sessionCleared());
       else setError(getApiError(error).message);

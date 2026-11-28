@@ -5,6 +5,7 @@
 export const motion = Object.freeze({
   ease: {
     out: 'power3.out', // entrances: fast start, soft landing
+    reveal: 'expo.out', // big text rising from its mask: quick, then a long glide
     in: 'power2.in', // exits: gentle start, quick finish
     pop: 'back.out(1.6)', // small playful overshoot (toasts, badges)
     float: 'sine.inOut', // calm looping movement
